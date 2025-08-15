@@ -1,29 +1,34 @@
-﻿using System.Text.Json;
+﻿using System.Net.Http.Json;
 using S4LabourTest.DTOs;
 using S4LabourTest.Models;
 
 namespace S4LabourTest.Services;
 
-public class EmployeeService : IEmployeeService
-{
-    public async Task<IEnumerable<Employee>> GetEmployees()
-    {
-        using var client = new HttpClient();
+public class EmployeeService(
+	HttpClient httpClient,
+	string endpoint = "https://randomuser.me/api/?results=20&inc=gender,name,phone,email,picture") : IEmployeeService {
+	private readonly HttpClient _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+	private readonly string _endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
 
-        //todo:This could pass these variables in, including pagination info if we wanted
-        var response =
-            await client.GetAsync("https://randomuser.me/api/?results=20&inc=gender,name,phone,email,picture");
-        response.EnsureSuccessStatusCode();
+	public EmployeeService() : this(new HttpClient()) { }
 
-        var randomUserResponse = await response.Content.ReadFromJsonAsync<RandomUserResponse>();
-        var employees = randomUserResponse?.Results;
-        if (!employees.Any()) return [];
-        //Doing this just so I have IDs to work with
-        employees = employees.Select((employee, i) =>
-        {
-            employee.Id = i;
-            return employee;
-        });
-        return employees;
-    }
+	public async Task<IEnumerable<Employee>> GetEmployees() {
+		var response = await _httpClient.GetAsync(_endpoint);
+		response.EnsureSuccessStatusCode();
+
+		var randomUserResponse = await response.Content.ReadFromJsonAsync<RandomUserResponse>();
+		if (randomUserResponse == null) {
+			throw new Exception("Could not deserialize response");
+		}
+
+		var employees = randomUserResponse.Results;
+		var array = employees as Employee[] ?? employees.ToArray();
+		if (array.Length == 0) return [];
+
+		employees = array.Select((employee, i) => {
+			employee.Id = i;
+			return employee;
+		});
+		return employees;
+	}
 }
