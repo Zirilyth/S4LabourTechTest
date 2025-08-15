@@ -9,7 +9,7 @@ namespace S4LabourTest.Controllers;
 [ProducesResponseType<IEnumerable<Employee>>(statusCode: 200)]
 [ProducesResponseType<BadRequestResult>(statusCode: 400)]
 [Route("employees")]
-public class EmployeesController(IEmployeeService employeeService) : Controller {
+public class EmployeesController(IEmployeeService employeeService, INotesService notesService) : Controller {
 	[HttpGet]
 	public IActionResult GetEmployees() {
 		try {
@@ -25,26 +25,25 @@ public class EmployeesController(IEmployeeService employeeService) : Controller 
 	[ProducesResponseType<BadRequestResult>(statusCode: 400)]
 	[HttpGet("{id:int}/notes")]
 	public IActionResult GetNotesForEmployee(int id) {
-		return new OkObjectResult(new List<Note> {
-			new Note {
-				Text = "This is a note",
-				EmployeeId = id,
-				CreatedAt = DateTime.Now
-			},
-			new Note {
-				Text = "This is another note",
-				EmployeeId = id,
-				CreatedAt = DateTime.Now
-
-			}
-		});
+		try {
+			var notes = notesService.GetNotesByUserId(id);
+			return new OkObjectResult(notes);
+		}
+		catch (Exception ex) {
+			return new BadRequestObjectResult(ex.Message);
+		}
 	}
 
 	[ProducesResponseType<IEnumerable<Note>>(statusCode: 200)]
 	[ProducesResponseType<BadRequestResult>(statusCode: 400)]
 	[HttpPost("{id:int}/notes")]
 	public IActionResult AddNoteForEmployee(int id, AddNoteRequest note) {
-		throw new NotImplementedException(nameof(AddNoteForEmployee));
+		try {
+			notesService.AddNoteToUser(id, note);
+			return new OkResult();
+		}
+		catch (Exception ex) {
+			return new BadRequestObjectResult(ex.Message);
+		}
 	}
 }
-

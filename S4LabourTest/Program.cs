@@ -10,21 +10,21 @@ builder.Services.AddOpenApi();
 
 
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
-//todo:add notes service
+builder.Services.AddScoped<INotesService, NotesService>();
+
+builder.Services.AddSingleton<InMemoryDataStore>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-}
+if (app.Environment.IsDevelopment()) { }
 
 app.MapOpenApi();
 app.UseSwaggerUi(options => { options.DocumentPath = "/openapi/v1.json"; });
 app.UseHttpsRedirection();
-app.UseCors(policyBuilder =>
-{
-    policyBuilder.WithOrigins("http://localhost:4200").AllowAnyHeader()
-        .AllowAnyMethod();
+app.UseCors(policyBuilder => {
+	policyBuilder.WithOrigins("http://localhost:4200").AllowAnyHeader()
+		.AllowAnyMethod();
 });
 
 
